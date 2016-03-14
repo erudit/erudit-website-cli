@@ -8,6 +8,6 @@ This is a very early version of the library, so documentation is sparse.
 
     $ python3 -m venv env
     $ . env/bin/activate
-    $ pip install -r requirements.txt
-    $ python erudit-website-cli.py arendt
+    $ python setup.py install
+    $ erudit-website-cli arendt
 
