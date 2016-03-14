@@ -14,6 +14,15 @@ def parse_args():
         'searchfor',
         help="The string to search for in Erudit's simple search box"
     )
+    parser.add_argument(
+        '--pagesize',
+        default='20',
+        help="Maximum number of results that we get in our results"
+    )
+    parser.add_argument(
+        '--startat',
+        help="Index at which our results should start"
+    )
     return parser.parse_args()
 
 def getsoup(content):
@@ -55,8 +64,14 @@ def main():
 
     SIMPLE_SEARCH_DATA = extract_post_args(form)
 
-    data = dict(SIMPLE_SEARCH_DATA, rechercheSimple=args.searchfor)
-    r = requests.post('http://erudit.org/recherche/', data=data)
+    data = dict(
+        SIMPLE_SEARCH_DATA,
+        rechercheSimple=args.searchfor,
+        taille=args.pagesize,
+    )
+    if args.startat:
+        data['pageDebut'] = args.startat
+    r = requests.post(ERUDIT_URL + '/recherche/', data=data)
     r.encoding = 'utf-8'
 
     soup = getsoup(r.text)
@@ -72,7 +87,14 @@ def main():
         results.append((docid, doctype, docauthor, doctitle))
 
     headers = ["ID", "Type", "Author", "Title"]
-    print(tabulate.tabulate(results, headers))
+    print(tabulate.tabulate(results, headers, tablefmt='grid'))
+
+    [total_div] = soup.select('div.ongletCorpus.Tous')
+    total_in_brackets = total_div.find('span', class_='nbr').get_text().strip()
+    total_result_count = total_in_brackets[1:-1]
+    startat = int(args.startat if args.startat else '1')
+    stopat = startat + int(args.pagesize) - 1
+    print("Results {} to {} out of {}".format(startat, stopat, total_result_count))
 
 if __name__ == '__main__':
     main()
