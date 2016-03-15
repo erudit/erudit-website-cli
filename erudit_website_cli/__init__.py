@@ -4,13 +4,20 @@ import argparse
 
 import tabulate
 
-from .scrape import simple_search
+from .scrape import simple_search, complex_search
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'searchfor',
-        help="The string to search for in Erudit's simple search box"
+        nargs='+',
+        help="The string to search for in Erudit's simple search box. Multiple args are AND-connected."
+    )
+    parser.add_argument(
+        '--or',
+        dest='searchfor_or',
+        action='append',
+        help="Add a search string to 'searchfor', but OR-connected."
     )
     parser.add_argument(
         '--pagesize',
@@ -26,7 +33,19 @@ def parse_args():
 
 def main():
     args = parse_args()
-    results = simple_search(args.searchfor, int(args.startat), int(args.pagesize))
+    if len(args.searchfor) > 1:
+        results = complex_search(
+            args.searchfor,
+            searchfor_or=args.searchfor_or,
+            startat=int(args.startat),
+            pagesize=int(args.pagesize)
+        )
+    else:
+        results = simple_search(
+            args.searchfor[0],
+            startat=int(args.startat),
+            pagesize=int(args.pagesize)
+        )
     headers = ["ID", "Type", "Author", "Title"]
     print(tabulate.tabulate(results.documents, headers, tablefmt='grid'))
 
